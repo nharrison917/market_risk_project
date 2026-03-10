@@ -1,0 +1,6 @@
+.venv/
+data_store.db
+outputs/
+*.pyc
+logs/
+__pycache__/
