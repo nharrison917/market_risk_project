@@ -9,6 +9,7 @@ from visuals.plots import plot_rolling_correlation_modern, plot_drawdowns, plot_
 from risk.tail_risk import compute_tail_comparison
 from risk.performance import compute_performance_summary
 from research.historical_regime_analysis import (
+    build_historical_dataset,
     compute_historical_regime_summary
 )
 
@@ -47,6 +48,7 @@ def setup_logging(log_level=logging.INFO):
 def main():
 
     REFRESH_DATA = False
+    Path("outputs").mkdir(exist_ok=True)
     setup_logging(log_level=logging.INFO)
     print("setup_logging executed")
 
@@ -97,10 +99,6 @@ def main():
     # Generate charts
     plot_rolling_correlation_modern(master_df)
     plot_drawdowns(master_df)
-
-    from research.historical_regime_analysis import build_historical_dataset
-    historical_df = build_historical_dataset()
-    plot_historical_correlation(historical_df)
 
     # Tail summary saved silently
     tail_results = compute_tail_comparison(master_df)

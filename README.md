@@ -138,9 +138,11 @@ growth-shock performance.
 
 ## Charts Included
 
--   36-Month Rolling Stock--Bond Correlation (1962--Present)
--   Rolling 60-Day SPY--TLT Correlation (Modern)
--   Drawdown Comparison: SPY vs 60/40 vs 60/30/10
+Interactive HTML charts (Plotly) saved to `outputs/figures/`:
+
+-   `historical_correlation_36m.html` -- 36-Month Rolling Stock--Bond Correlation (1962--Present)
+-   `rolling_correlation_modern.html` -- Rolling 60-Day SPY--TLT Correlation (2006--Present)
+-   `drawdown_comparison_3asset.html` -- Drawdown Comparison: SPY vs 60/40 vs 60/30/10
 
 ------------------------------------------------------------------------
 
@@ -163,5 +165,10 @@ py -3.11 -m venv .venv
 pip install -r requirements.txt
 ```
 
-Developed and tested using Python 3.11 and pandas 2.1.4 (pandas < 2.2
-required for pandas-datareader compatibility).
+Developed and tested using Python 3.11.
+
+------------------------------------------------------------------------
+
+## Tooling
+
+Developed with [Claude Code](https://claude.ai/claude-code) (Anthropic) as an AI pair-programming assistant — used for code review, bug triage, and refactoring toward production standards.

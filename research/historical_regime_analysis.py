@@ -11,9 +11,9 @@ def build_historical_dataset():
     cpi = fetch_fred_series("CPIAUCSL").rename(columns={"CPIAUCSL": "cpi"})
 
 
-     # Convert all to monthly first
-    dgs10 = dgs10.resample("M").last()
-    cpi = cpi.resample("M").last()
+    # Convert all to monthly (month-end frequency)
+    dgs10 = dgs10.resample("ME").last()
+    cpi = cpi.resample("ME").last()
 
     # Join after frequency alignment
     df = sp500.join(dgs10, how="inner")

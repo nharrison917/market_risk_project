@@ -10,7 +10,6 @@ def init_db(db_path="data_store.db"):
         CREATE TABLE IF NOT EXISTS prices (
             date TEXT,
             ticker TEXT,
-            close REAL,
             adj_close REAL,
             volume REAL,
             PRIMARY KEY (date, ticker)
@@ -26,14 +25,14 @@ def write_prices(df, db_path="data_store.db"):
     df.to_sql("prices", conn, if_exists="replace", index=False)
     conn.close()
 
-def load_prices_from_db():
-    conn = sqlite3.connect("data_store.db")
+def load_prices_from_db(db_path="data_store.db"):
+    conn = sqlite3.connect(db_path)
 
     df = pd.read_sql("SELECT * FROM prices", conn)
 
     conn.close()
 
-    # Convert date column safely
-    df["date"] = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None)
+    # Strip UTC timezone after parsing so downstream code works with naive datetimes
+    df["date"] = pd.to_datetime(df["date"], utc=True).dt.tz_convert(None)
 
     return df
