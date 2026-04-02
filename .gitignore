@@ -1,6 +1,8 @@
 .venv/
+.env
 data_store.db
-outputs/
+outputs/*
+!outputs/*.csv
 *.pyc
 logs/
 __pycache__/
