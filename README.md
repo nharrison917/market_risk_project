@@ -1,174 +1,201 @@
 # Market Risk Project
+## Regime Dependence of Stock-Bond Diversification
 
-## Regime Dependence of Stock--Bond Diversification
+**[Live Dashboard](https://marketriskproject-7tn7cdfwyuyhbuquj2y6kh.streamlit.app/)**
 
-------------------------------------------------------------------------
+---
 
-## Executive Summary
+## The Finding
 
-Stock–bond correlation is regime-dependent. The deeply negative 2000–2020
-correlation regime was historically atypical relative to pre-2000 norms.
-A modest allocation to inflation-sensitive assets reduces inflation-shock
-drawdowns with limited long-run return tradeoff.
+The negative stock-bond correlation that made the classic 60/40 portfolio so effective from
+2000-2020 was historically unusual — not the long-run norm. Prior to 2000, stocks and bonds
+were predominantly positively correlated. The 2022 inflation shock was a partial reversion to
+that historical baseline, and it exposed a structural vulnerability in 60/40.
 
-------------------------------------------------------------------------
+During the 6 **sustained correlation breakdown episodes** identified since 2006 (periods where
+the 60-day SPY-TLT correlation exceeded 0.2 for at least 21 consecutive trading days):
 
-## Overview
+| Portfolio | Ann. Return | Ann. Volatility | CVaR (5%) |
+|---|---|---|---|
+| SPY (100% Equity) | 10.2% | 14.3% | -1.74% |
+| 60/40 (SPY + TLT) | 14.4% | 12.5% | -1.46% |
+| **60/30/10 (+ Commodities)** | **10.1%** | **11.6%** | **-1.35%** |
 
-This project analyzes the regime dependence of stock–bond diversification 
-and evaluates structural portfolio robustness under inflation-driven stress
-environments.
+60/30/10 shows lower volatility and better tail protection precisely when the bond hedge fails.
+Outside these episodes — when bonds are doing their job — 60/40 leads on both return and vol.
+The commodity allocation behaves as regime insurance: low cost in benign environments,
+meaningful stabilization when the correlation flips.
 
-The traditional 60/40 portfolio assumes that bonds hedge equity risk during
-drawdowns. However, stock–bond correlation is not structurally stable across
-macro regimes. This project investigates whether the negative correlation 
-regime observed from 2000–2020 was historically typical, and whether modest
-inflation-sensitive exposure improves portfolio robustness. 
+In 2022 specifically, 60/40 was actually *worse* than SPY on drawdown (-27.2% vs -24.5%),
+because TLT declined alongside equities once the correlation turned positive. 60/30/10
+drawdown: -22.5%.
 
-The project combines modern ETF data (2002--present) with 60 years of
-macroeconomic history (1962--present).
+---
 
-------------------------------------------------------------------------
+## Dashboard
+
+[![Regime Snapshot](docs/01_regime_snapshot.png)](https://marketriskproject-7tn7cdfwyuyhbuquj2y6kh.streamlit.app/)
+
+The **Executive Summary** tab shows the current market regime across three axes (volatility,
+correlation, drawdown), the regime-sliced performance comparison, and the drawdown chart with
+sustained breakdown episodes shaded.
+
+[![Regime Metrics](docs/02_regime_metrics.png)](https://marketriskproject-7tn7cdfwyuyhbuquj2y6kh.streamlit.app/)
+
+[![Drawdown Chart](docs/03_drawdown_shaded.png)](https://marketriskproject-7tn7cdfwyuyhbuquj2y6kh.streamlit.app/)
+
+The **Deep Dive** tab covers 60+ years of stock-bond correlation history, decade-level
+structure, tail risk before and after the 2022 regime shift, and real yield shock comparisons
+between the 1970s and 2020s inflation episodes.
+
+[![Historical Correlation](docs/04_historical_correlation.png)](https://marketriskproject-7tn7cdfwyuyhbuquj2y6kh.streamlit.app/)
+
+---
 
 ## Research Questions
 
-1.  How persistent is negative stock--bond correlation?
-2.  Was the 2000--2020 regime historically anomalous?
-3.  How did diversification behave during inflation-driven drawdowns?
-4.  Can modest commodity exposure improve portfolio robustness without
-    overfitting?
+1. How persistent is negative stock-bond correlation across macro history?
+2. Was the 2000-2020 regime historically anomalous?
+3. How did diversification behave during inflation-driven drawdowns?
+4. Can modest commodity exposure improve portfolio robustness without overfitting?
 
-------------------------------------------------------------------------
+---
 
 ## Data & Methodology
 
-### Modern ETF Layer (2006--Present)
+### Modern ETF Layer (2006-Present)
 
-**Assets:**
- - SPY (equities)
- - TLT (long-duration Treasuries)
- - DBC (broad commodities)
+**Assets:** SPY (equities), TLT (long-duration Treasuries), DBC (broad commodities)
 
-**Metrics:** - Daily returns - Rolling 30-day volatility - Rolling
-60-day SPY--TLT correlation - Drawdowns - Tail risk (VaR, CVaR) -
-Conditional equity tail performance
+**Metrics:** Daily returns, rolling 30-day volatility, rolling 60-day SPY-TLT correlation,
+drawdowns, tail risk (VaR, CVaR at 5th percentile)
 
-**Structural Test:** - 60/40 portfolio - 60/30/10 portfolio (adding 10%
-commodities)
+**Portfolios compared:** 60/40 (SPY + TLT) vs 60/30/10 (SPY + TLT + DBC)
 
-Additional exploratory regime analysis is available in analysis_notes.py
-and is not required for core outputs.
+**Regime classification:** Each trading day is labeled across three axes:
+- Volatility: LOW_VOL / NORMAL_VOL / HIGH_VOL (30-day rolling, percentile thresholds)
+- Correlation: DIVERSIFYING / NEUTRAL / BREAKDOWN (60-day rolling, ±0.2 thresholds)
+- Drawdown: NORMAL / CORRECTION / STRESS (-5% / -10% thresholds)
 
-------------------------------------------------------------------------
+**Sustained breakdown episodes:** Correlation breakdown days are grouped into contiguous runs;
+only runs of 21+ trading days (one full monthly cycle) are treated as meaningful regime
+episodes. This filters single-day or week-long spikes that reflect noise rather than structural
+shift.
 
-### Historical Macro Layer (1962--Present)
+### Historical Macro Layer (1962-September 2023)
 
-**Data sources:** - Shiller S&P data (monthly) - FRED 10-year Treasury
-yields (DGS10) - CPI (CPIAUCSL)
+**Data sources:** Robert Shiller S&P 500 monthly data (Yale), FRED 10-year Treasury yield
+(DGS10), FRED CPI (CPIAUCSL)
 
-**Constructed:** - Monthly equity returns - Bond returns are approximated
-using a constant-duration duration × yield change framework.
- - 36-month rolling stock--bond correlation
+**Constructed:** Monthly equity and approximate bond returns, 36-month rolling stock-bond
+correlation, inflation YoY, real yield proxy (nominal yield minus YoY CPI)
 
-This provides a 60-year macro view of correlation regimes.
+Note: Shiller's dataset is updated with a lag. Current coverage ends September 2023.
+The ETF-era data (yfinance) is current to the most recent pipeline run.
 
-------------------------------------------------------------------------
+---
 
 ## Key Findings
 
-All statistics are computed using rolling correlations and non-parametric
-historical tail metrics (VaR, CVaR).
+### 1. Stock-Bond Correlation Is Regime-Dependent
 
-### 1. Stock--Bond Correlation Is Regime-Dependent
+Correlation has historically been mostly positive prior to 2000, deeply negative during
+2000-2020, and rising again since the 2022 inflation shock. The post-2000 period that most
+modern portfolio construction assumes as a baseline was historically atypical.
 
-Correlation has historically been:
+- Pre-2000 average 36-month correlation: **+0.12**
+- Post-2000 average 36-month correlation: **-0.32**
 
--   Mostly positive prior to 2000
--   Deeply negative during 2000--2020
--   Rising again during the 2022 inflation shock
+### 2. 2022 Was a Rapid Partial Reversion to Historical Norms
 
-------------------------------------------------------------------------
+The speed of the 2022 correlation transition was historically extreme — comparable in magnitude
+to the 1970s inflation shock but compressed into a shorter window. 60/40 max drawdown in 2022
+was -27.2%, worse than SPY (-24.5%), because TLT declined alongside equities.
 
-### 2. The 2000--2020 Negative Regime Was Historically Unusual
+### 3. The Commodity Hedge Is Asymmetric
 
--   Pre-2000 average 36m correlation: **+0.12**
--   Post-2000 average 36m correlation: **−0.32**
--   1970s--1990s saw predominantly positive correlation
+Over the full sample, 60/30/10 modestly underperforms 60/40 (8.3% vs 8.4% annualized return,
+Sharpe 0.54 vs 0.57). The cost is real but small. The benefit is concentrated in the regimes
+where it matters most: sustained correlation breakdown episodes, where CVaR improves by
+11 basis points per day and annualized volatility drops from 12.5% to 11.6%.
 
-The negative stock–bond correlation regime commonly assumed in
-portfolio construction is not the long-run historical norm.
+---
 
-------------------------------------------------------------------------
+## Future Directions
 
-### 3. 2022 Represented a Rapid Partial Reversion
+The current analysis identifies regime episodes in hindsight. The harder and more actionable
+question — at what point does an investor know they are in a regime shift, and when should they
+act — is addressed in [FUTURE_DIRECTIONS.md](FUTURE_DIRECTIONS.md).
 
--   Correlation levels resembled historical inflation regimes.
--   The speed of transition was historically extreme.
--   Suggests that modern market structure may amplify regime transitions.
+The timing problem has several layers: the 60-day rolling correlation window is itself lagged,
+confirmation delay means damage may already be in progress before a regime is "called," and
+regime exit is at least as difficult as entry. Potential approaches include Hidden Markov
+Models, Kalman filtering on correlation, and cost-of-being-wrong analysis on the detection
+threshold.
 
-------------------------------------------------------------------------
+---
 
-### 4. Adding Commodities Improved Inflation Shock Robustness
+## Project Structure
 
-In 2022:
+```
+market_risk_project/
+├── app.py                    # Streamlit dashboard entry point
+├── main.py                   # Pipeline orchestrator
+├── data/
+│   ├── ingestion.py          # yfinance price fetching
+│   ├── store.py              # SQLite price cache
+│   ├── fred_ingestion.py     # FRED API via fredapi
+│   └── shiller_ingestion.py  # Shiller S&P monthly data
+├── risk/
+│   ├── metrics.py            # Returns, vol, drawdown, regime classification
+│   ├── tail_risk.py          # VaR and CVaR by period
+│   └── performance.py        # Annualized return, vol, drawdown, Sharpe
+├── research/
+│   └── historical_regime_analysis.py  # 1962-present macro dataset
+├── visuals/
+│   └── plots.py              # Plotly figure builders
+├── analysis_notes.py         # Exploratory: decade breakdown, yield shocks
+├── outputs/                  # Pre-computed CSVs (committed for dashboard)
+├── docs/                     # Screenshots for README
+├── CHANGELOG.md              # Build history and architectural decisions
+└── FUTURE_DIRECTIONS.md      # Regime detection research directions
+```
 
--   60/40: −24.4%
--   60/30/10: −18.8%
-
-However:
-
--   2008 and 2020 favored 60/40
--   Long-run return tradeoff was modest (\~16 bps annualized)
-
-Adding commodities reduced regime asymmetry but sacrificed some
-growth-shock performance.
-
-------------------------------------------------------------------------
-
-## Portfolio Implications
-
--   Diversification is structurally regime-dependent.
--   The 60/40 portfolio performs strongly during growth-dominant
-    regimes.
--   Inflation regimes require broader structural diversification.
--   Regime timing remains difficult; structural robustness may be
-    preferable to tactical timing.
-
-------------------------------------------------------------------------
-
-## Charts Included
-
-Interactive HTML charts (Plotly) saved to `outputs/figures/`:
-
--   `historical_correlation_36m.html` -- 36-Month Rolling Stock--Bond Correlation (1962--Present)
--   `rolling_correlation_modern.html` -- Rolling 60-Day SPY--TLT Correlation (2006--Present)
--   `drawdown_comparison_3asset.html` -- Drawdown Comparison: SPY vs 60/40 vs 60/30/10
-
-------------------------------------------------------------------------
-
-## Outputs
-
-- performance_summary.csv
-- tail_risk_summary.csv
-- historical_regime_summary.csv
-
-------------------------------------------------------------------------
+---
 
 ## Environment Setup
 
-
-To recreate the environment:
-
-``` bash
+```bash
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+Copy `.env.example` to `.env` and add your FRED API key
+(free at [fredaccount.stlouisfed.org](https://fredaccount.stlouisfed.org)):
+
+```
+FRED_API_KEY=your_key_here
+```
+
+Run the pipeline to regenerate outputs:
+
+```bash
+python main.py
+```
+
+Launch the dashboard locally:
+
+```bash
+streamlit run app.py
+```
+
 Developed and tested using Python 3.11.
 
-------------------------------------------------------------------------
+---
 
 ## Tooling
 
-Developed with [Claude Code](https://claude.ai/claude-code) (Anthropic) as an AI pair-programming assistant — used for code review, bug triage, and refactoring toward production standards.
+Developed with [Claude Code](https://claude.ai/claude-code) (Anthropic) as an AI
+pair-programming assistant — used for architecture decisions, code review, and iterative
+build across both the analysis pipeline and the dashboard.
