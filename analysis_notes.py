@@ -42,8 +42,16 @@ def real_yield_shock_analysis(df):
         df["real_yield_proxy"].diff(12)
     )
 
-    print(f"70s max real yield 12m change: {df.loc['1970':'1982', 'real_yield_12m_change'].max():.4f}")
-    print(f"2020s max real yield 12m change: {df.loc['2020':'2023', 'real_yield_12m_change'].max():.4f}")
+    shock_70s = df.loc["1970":"1982", "real_yield_12m_change"].max()
+    shock_2020s = df.loc["2020":"2023", "real_yield_12m_change"].max()
+
+    print(f"70s max real yield 12m change: {shock_70s:.4f}")
+    print(f"2020s max real yield 12m change: {shock_2020s:.4f}")
+
+    return pd.DataFrame({
+        "Era": ["1970s Inflation Shock", "2020s Inflation Shock"],
+        "Max 12m Real Yield Change (pp)": [round(shock_70s, 4), round(shock_2020s, 4)]
+    })
 
 
 def decade_structure_analysis(df):
@@ -68,6 +76,14 @@ def decade_structure_analysis(df):
 
     print("\nShare of positive months by decade:")
     print(positive_share)
+
+    result = pd.DataFrame({
+        "Avg 36m Correlation": decade_corr.round(3),
+        "% Months Positive Corr": (positive_share * 100).round(1)
+    })
+    result.index = result.index.astype(str) + "s"
+    result.index.name = "Decade"
+    return result
 
 
 if __name__ == "__main__":

@@ -107,11 +107,43 @@ def main():
     performance_summary = compute_performance_summary(master_df)
     performance_summary.to_csv("outputs/performance_summary.csv")
 
+    # --- Timeseries CSVs for dashboard (written before historical fetch) ---
+
+    # Current regime snapshot (last valid row)
+    last_row = spy_regimes.dropna(subset=["regime"]).iloc[[-1]].copy()
+    regime_parts = last_row["regime"].iloc[0].split(" | ")
+    last_row["vol_regime"] = regime_parts[0]
+    last_row["corr_regime"] = regime_parts[1]
+    last_row["dd_regime"] = regime_parts[2]
+    last_row.index.name = "date"
+    last_row[["vol_regime", "corr_regime", "dd_regime",
+              "rolling_vol_30", "corr", "drawdown", "regime"]].to_csv("outputs/current_regime.csv")
+
+    # Drawdown timeseries
+    master_df[["drawdown", "portfolio_drawdown", "portfolio_60_30_10_drawdown"]].to_csv(
+        "outputs/drawdown_timeseries.csv"
+    )
+
+    # Modern rolling correlation timeseries
+    master_df[["corr"]].rename(columns={"corr": "rolling_corr_60d"}).to_csv(
+        "outputs/correlation_modern.csv"
+    )
+
+    # Daily portfolio returns (for regime-sliced performance analysis)
+    master_df[["daily_return", "portfolio_60_40", "portfolio_60_30_10"]].rename(columns={
+        "daily_return": "spy",
+        "portfolio_60_40": "port_60_40",
+        "portfolio_60_30_10": "port_60_30_10",
+    }).to_csv("outputs/portfolio_returns.csv")
+
     historical_df = build_historical_dataset()
     plot_historical_correlation(historical_df)
 
     historical_summary = compute_historical_regime_summary(historical_df)
     historical_summary.to_csv("outputs/historical_regime_summary.csv")
+
+    # Historical rolling correlation timeseries
+    historical_df[["rolling_corr_36m"]].to_csv("outputs/correlation_historical.csv")
 
     logging.info("Charts and summaries generated successfully.")
 

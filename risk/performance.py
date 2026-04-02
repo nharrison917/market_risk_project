@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+RISK_FREE_RATE = 0.02  # Long-run average; displayed explicitly in dashboard
+
 
 def compute_performance_summary(master_df):
 
@@ -11,7 +13,8 @@ def compute_performance_summary(master_df):
         max_dd = (series.add(1).cumprod() /
                   series.add(1).cumprod().cummax() - 1).min()
 
-        return ann_return, ann_vol, max_dd
+        sharpe = (ann_return - RISK_FREE_RATE) / ann_vol
+        return ann_return, ann_vol, max_dd, sharpe
 
     results = {}
 
@@ -22,12 +25,13 @@ def compute_performance_summary(master_df):
     }
 
     for name, series in portfolios.items():
-        ann_return, ann_vol, max_dd = summarize(series)
+        ann_return, ann_vol, max_dd, sharpe = summarize(series)
 
         results[name] = {
             "Annual_Return": ann_return,
             "Annual_Volatility": ann_vol,
-            "Max_Drawdown": max_dd
+            "Max_Drawdown": max_dd,
+            "Sharpe_Ratio": sharpe
         }
 
     return pd.DataFrame(results).T
