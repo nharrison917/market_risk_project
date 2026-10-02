@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 
 ---
 
+## Historical Snapshot, Date Labels, and Real Yield Fix (2026-10-02)
+
+### Fixed
+
+- **Real yield proxy units** (`analysis_notes.py`) -- `yield_10y` (FRED DGS10) is in percent
+  but `inflation_yoy` is a fraction, so the proxy subtracted ~0.09 instead of ~9 points and
+  was effectively the nominal yield. Inflation is now scaled to percent. Max 12-month change:
+  1970s 4.00 -> 8.34 pp, 2020s 2.53 -> 6.74 pp (2020s now 81% of the 1970s shock, was 63%).
+- **Open-ended date labels** -- the modern correlation chart said "2006-Present" and a caption
+  said "through the present"; the data ends March 2026. All date labels now derive from the
+  data via `get_coverage()` in `app.py`, and a data-coverage line sits above the tabs.
+
+### Changed
+
+- **Historical tables are a committed snapshot** -- `main.py` writes
+  `outputs/decade_structure.csv` and `outputs/real_yield_shocks.csv`; the dashboard no longer
+  fetches Shiller/FRED data at runtime, so it needs no `FRED_API_KEY` and makes no network calls.
+  Historical data ends September 2023 (end of the Shiller source used).
+- **Requirements split** -- `requirements.txt` is dashboard-only (pandas, numpy, plotly,
+  streamlit); pipeline packages moved to `requirements-pipeline.txt`. Unused
+  `pandas-datareader` dropped.
+- **Smoke test** -- added a check that no rendered label says "Present".
+
+---
+
 ## Phase Two — Streamlit Dashboard (2026-04-02)
 
 ### Added
