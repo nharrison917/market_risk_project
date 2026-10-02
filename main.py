@@ -12,6 +12,7 @@ from research.historical_regime_analysis import (
     build_historical_dataset,
     compute_historical_regime_summary
 )
+from analysis_notes import decade_structure_analysis, real_yield_shock_analysis
 
 def setup_logging(log_level=logging.INFO):
     log_dir = Path("logs")
@@ -144,6 +145,13 @@ def main():
 
     # Historical rolling correlation timeseries
     historical_df[["rolling_corr_36m"]].to_csv("outputs/correlation_historical.csv")
+
+    # Historical tables for the dashboard. Written here so the app reads a
+    # snapshot instead of fetching Shiller/FRED data live at runtime.
+    decade_structure_analysis(historical_df.copy()).to_csv("outputs/decade_structure.csv")
+    real_yield_shock_analysis(historical_df.copy()).to_csv(
+        "outputs/real_yield_shocks.csv", index=False
+    )
 
     logging.info("Charts and summaries generated successfully.")
 
