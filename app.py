@@ -58,10 +58,7 @@ def load_corr_modern():
 
 @st.cache_data
 def load_corr_historical():
-    path = OUTPUTS / "correlation_historical.csv"
-    if not path.exists():
-        return None
-    df = pd.read_csv(path, index_col=0, parse_dates=True)
+    df = pd.read_csv(OUTPUTS / "correlation_historical.csv", index_col=0, parse_dates=True)
     return df
 
 
@@ -75,6 +72,41 @@ def load_historical_summary():
 def load_portfolio_returns():
     df = pd.read_csv(OUTPUTS / "portfolio_returns.csv", index_col=0, parse_dates=True)
     return df
+
+
+@st.cache_data
+def load_decade_structure():
+    df = pd.read_csv(OUTPUTS / "decade_structure.csv", index_col=0)
+    return df
+
+
+@st.cache_data
+def load_real_yield_shocks():
+    df = pd.read_csv(OUTPUTS / "real_yield_shocks.csv")
+    return df
+
+
+# ---------------------------------------------------------------------------
+# Data coverage -- every date label in the app derives from these, so labels
+# stay correct if the pipeline (main.py) is re-run on newer data.
+# ---------------------------------------------------------------------------
+
+def fmt_month(ts):
+    return ts.strftime("%B %Y")
+
+
+@st.cache_data
+def get_coverage():
+    modern = load_corr_modern()
+    hist = load_corr_historical()
+    return {
+        "modern_start": modern.index.min(),
+        "modern_end": modern.index.max(),
+        "hist_start": hist.index.min(),
+        "hist_end": hist.index.max(),
+        # First month with a full 36-month correlation window
+        "hist_corr_start": hist["rolling_corr_36m"].first_valid_index(),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +237,7 @@ def build_corr_modern_fig(df):
         annotation_position="top left"
     )
     fig.update_layout(
-        title="Rolling 60-Day SPY-TLT Correlation (2006-Present)",
+        title=f"Rolling 60-Day SPY-TLT Correlation ({df.index.min().year}–{fmt_month(df.index.max())})",
         xaxis_title="Date",
         yaxis_title="Correlation",
         hovermode="x unified",
@@ -229,7 +261,7 @@ def build_corr_historical_fig(df):
         annotation_position="top left"
     )
     fig.update_layout(
-        title=f"36-Month Rolling Stock-Bond Correlation (1962\u2013{df.index.max().strftime('%B %Y')})",
+        title=f"36-Month Rolling Stock-Bond Correlation ({df.index.min().year}\u2013{fmt_month(df.index.max())})",
         xaxis_title="Date",
         yaxis_title="Correlation",
         hovermode="x unified",
@@ -284,6 +316,18 @@ def fmt_float(val, decimals=2):
 # ---------------------------------------------------------------------------
 # Main layout
 # ---------------------------------------------------------------------------
+
+cov = get_coverage()
+modern_range = f"{fmt_month(cov['modern_start'])} – {cov['modern_end'].strftime('%B %d, %Y')}"
+hist_range = f"{fmt_month(cov['hist_start'])} – {fmt_month(cov['hist_end'])}"
+hist_end = fmt_month(cov["hist_end"])
+modern_end = fmt_month(cov["modern_end"])
+
+st.caption(
+    f"**Data coverage** — ETF era (SPY, TLT, DBC daily): {modern_range}. "
+    f"Historical (Shiller S&P 500 + FRED, monthly): {hist_range}. "
+    "Figures are a fixed snapshot of the analysis; \"current\" means the latest date above."
+)
 
 tab1, tab2 = st.tabs(["Executive Summary", "Deep Dive"])
 
@@ -366,6 +410,7 @@ with tab1:
         st.dataframe(subset)
 
     st.caption(
+        f"Daily returns, {modern_range}. "
         f"Sustained breakdown = 60-day SPY-TLT correlation > 0.2 for >= {BREAKDOWN_MIN_DAYS} "
         "consecutive trading days. CVaR (5%) = average daily loss on the worst 5% of days. "
         f"Sharpe ratio (full sample, 2% risk-free rate) — SPY: {fmt_float(load_performance().loc['SPY','Sharpe_Ratio'])}, "
@@ -393,7 +438,10 @@ with tab1:
 
     # --- Drawdown chart ---
     st.subheader("Drawdown Through Time")
-    st.caption("Shaded regions mark sustained correlation breakdown episodes (>=21 trading days above 0.2 threshold).")
+    st.caption(
+        f"{modern_range}. Shaded regions mark sustained correlation breakdown episodes "
+        f"(>={BREAKDOWN_MIN_DAYS} trading days above 0.2 threshold)."
+    )
     drawdown_df = load_drawdown_ts()
     breakdown_periods = get_sustained_breakdown_periods()
     st.plotly_chart(build_drawdown_fig(drawdown_df, breakdown_periods))
@@ -415,56 +463,39 @@ with tab2:
 
     # --- Historical correlation chart ---
     hist_corr = load_corr_historical()
-    hist_end = hist_corr.index.max().strftime("%B %Y") if hist_corr is not None else "unknown"
-    hist_start_year = hist_corr.index.min().year if hist_corr is not None else 1962
 
-    st.subheader(f"{hist_start_year}–{hist_end}: Stock-Bond Correlation")
+    st.subheader(f"{cov['hist_start'].year}–{hist_end}: Stock-Bond Correlation")
     st.markdown(
         "The 36-month rolling correlation between stocks and bonds has spent significant time "
         "in positive territory. The post-2000 negative correlation period was the exception. "
         "The shaded region marks the modern era (post-2000) that most investors treat as the baseline."
     )
     st.caption(
-        f"Source: Robert Shiller (Yale) monthly S&P 500 data + FRED 10-year Treasury yield. "
-        f"Shiller's dataset is updated with a lag; current coverage ends {hist_end}. "
-        f"For the post-{hist_end} period, see the ETF-era correlation chart below."
+        f"Source: Robert Shiller (Yale) monthly S&P 500 data + FRED 10-year Treasury yield, "
+        f"{hist_range} (the Shiller source used ends {hist_end}). The 36-month correlation "
+        f"begins {fmt_month(cov['hist_corr_start'])}, once a full window is available. "
+        f"For the period after {hist_end}, see the ETF-era correlation chart below."
     )
 
-    if hist_corr is not None:
-        st.plotly_chart(build_corr_historical_fig(hist_corr))
-    else:
-        st.warning(
-            "Historical correlation data not yet generated. "
-            "Run `python main.py` to fetch FRED data and regenerate outputs."
-        )
+    st.plotly_chart(build_corr_historical_fig(hist_corr))
 
     # --- Decade breakdown table ---
     st.subheader("Decade-Level Correlation Structure")
     st.markdown(
         "Breaking the historical period into decades reveals the structural shift. "
-        "The 1960s through 1990s were characterized by predominantly positive stock-bond correlation. "
+        "The 1970s through 1990s were characterized by predominantly positive stock-bond correlation "
+        "(80–94% of months); the late 1960s were mixed. "
         "The 2000s-2010s were anomalously negative. The 2020s have already begun reverting."
     )
 
-    try:
-        from analysis_notes import decade_structure_analysis
-        from research.historical_regime_analysis import build_historical_dataset
-
-        @st.cache_data
-        def get_decade_table():
-            hdf = build_historical_dataset()
-            return decade_structure_analysis(hdf.copy())
-
-        decade_df = get_decade_table()
-        st.dataframe(decade_df)
-        st.caption(
-            f"Based on Shiller monthly data (1962–{hist_end}). "
-            f"The 2020s row reflects January 2020 through {hist_end} only — "
-            "not the full decade. The correlation reversal it shows has continued and deepened "
-            "through the present; see the ETF-era chart below for the full post-2022 picture."
-        )
-    except Exception as e:
-        st.warning(f"Could not load decade breakdown (FRED data required): {e}")
+    st.dataframe(load_decade_structure())
+    st.caption(
+        f"Based on 36-month rolling correlation, {fmt_month(cov['hist_corr_start'])} – {hist_end}. "
+        f"Partial decades: the 1960s row covers {cov['hist_corr_start'].year}–1969 only, and the "
+        f"2020s row covers January 2020 – {hist_end} only. The correlation reversal it shows has "
+        f"continued and deepened through {modern_end}; see the ETF-era chart below for the full "
+        "post-2022 picture."
+    )
 
     st.divider()
 
@@ -477,10 +508,9 @@ with tab2:
     )
 
     tail = load_tail_risk()
-    modern_end = load_corr_modern().index.max().strftime("%B %Y")
     st.dataframe(tail)
     st.caption(
-        f"Source: daily ETF returns (SPY, TLT, DBC) via yfinance. Coverage: 2006–{modern_end}. "
+        f"Source: daily ETF returns (SPY, TLT, DBC) via yfinance. Coverage: {modern_range}. "
         "VaR: daily loss exceeded 5% of the time. CVaR: average loss on those worst-5% days. "
         f"Pre-2022 = 2006–2021. Post-2022 = January 2022–{modern_end}."
     )
@@ -495,28 +525,17 @@ with tab2:
         "which is the last sustained period of positive stock-bond correlation."
     )
 
-    try:
-        from analysis_notes import real_yield_shock_analysis
-        from research.historical_regime_analysis import build_historical_dataset
-
-        @st.cache_data
-        def get_yield_shock_table():
-            hdf = build_historical_dataset()
-            return real_yield_shock_analysis(hdf.copy())
-
-        shock_df = get_yield_shock_table()
-        st.dataframe(shock_df)
-        st.caption(
-            "Real yield proxy = 10-year nominal yield minus YoY CPI inflation. "
-            "Max 12-month change measured within each era."
-        )
-    except Exception as e:
-        st.warning(f"Could not load yield shock data (FRED data required): {e}")
+    st.dataframe(load_real_yield_shocks(), hide_index=True)
+    st.caption(
+        "Real yield proxy = 10-year nominal yield minus YoY CPI inflation (both in percent). "
+        "Max 12-month change measured within each era: 1970s = January 1970 – December 1982; "
+        f"2020s = January 2020 – {hist_end} (end of historical data)."
+    )
 
     st.divider()
 
     # --- Modern correlation chart ---
-    st.subheader(f"Modern Era: Rolling 60-Day SPY-TLT Correlation (2006–{modern_end})")
+    st.subheader(f"Modern Era: Rolling 60-Day SPY-TLT Correlation ({cov['modern_start'].year}–{modern_end})")
     st.markdown(
         "Zooming into the ETF era, the breakdown threshold (correlation > 0.2) was crossed "
         "in 2022 and has persisted. This is what the current regime snapshot on the summary tab is detecting."
