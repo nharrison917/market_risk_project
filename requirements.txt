@@ -1,9 +1,10 @@
-pandas>=2.2,<3.0
+# Pinned to exact versions smoke-tested on Python 3.11 (2026-10-02). See tests/test_app.py.
+pandas==2.3.3
 numpy==1.26.4
-plotly>=5.0.0
+plotly==7.1.0
 yfinance==1.2.0
 pandas-datareader==0.10.0
 xlrd==2.0.2
-streamlit>=1.35.0
-fredapi>=0.5.0
-python-dotenv>=1.0.0
+streamlit==1.64.0
+fredapi==0.5.2
+python-dotenv==1.2.4
