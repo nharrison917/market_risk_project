@@ -34,8 +34,10 @@ def real_yield_shock_analysis(df):
     print("Real Yield Shock Comparison")
     print("="*60)
 
+    # yield_10y (FRED DGS10) is in percent; inflation_yoy is a fraction
+    # (pct_change), so scale inflation to percent before subtracting.
     df["real_yield_proxy"] = (
-        df["yield_10y"] - df["inflation_yoy"]
+        df["yield_10y"] - df["inflation_yoy"] * 100
     )
 
     df["real_yield_12m_change"] = (
