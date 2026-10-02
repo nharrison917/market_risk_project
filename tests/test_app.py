@@ -57,3 +57,18 @@ def test_every_view_renders(monkeypatch):
                 problems += _problems(run, f"{kind} '{widget.label}' = {option}")
 
     assert not problems, "\n".join(problems)
+
+
+def test_date_labels_are_not_open_ended(monkeypatch):
+    """The app shows a fixed snapshot, so no label may claim data runs to 'Present'.
+
+    Date ranges should be derived from the data (see get_coverage in app.py).
+    """
+    import re
+
+    at = _fresh(monkeypatch)
+    texts = [e.value for kind in ("title", "subheader", "markdown", "caption", "info")
+             for e in getattr(at, kind)]
+    texts += [chart.proto.spec for chart in at.get("plotly_chart")]  # figure JSON incl. titles
+    hits = [t[:120] for t in texts if re.search(r"\bpresent\b", t, re.IGNORECASE)]
+    assert not hits, "Open-ended date label(s) found:\n" + "\n".join(hits)

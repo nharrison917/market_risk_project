@@ -1,0 +1,7 @@
+# Data pipeline (main.py): fetches ETF prices, FRED series, and Shiller data, then
+# writes the CSVs in outputs/ that the dashboard reads.
+-r requirements.txt
+yfinance==1.2.0
+fredapi==0.5.2
+python-dotenv==1.2.4
+xlrd==2.0.2

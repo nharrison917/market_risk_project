@@ -168,8 +168,12 @@ market_risk_project/
 ```bash
 py -3.11 -m venv .venv
 .\.venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-pipeline.txt
 ```
+
+Dependencies are split by purpose: `requirements.txt` is the dashboard only (what Streamlit
+Cloud installs), `requirements-pipeline.txt` adds the data-fetching packages, and
+`requirements-dev.txt` adds `pytest`. To only view the dashboard, `requirements.txt` is enough.
 
 Copy `.env.example` to `.env` and add your FRED API key
 (free at [fredaccount.stlouisfed.org](https://fredaccount.stlouisfed.org)):
@@ -188,6 +192,13 @@ Launch the dashboard locally:
 
 ```bash
 streamlit run app.py
+```
+
+Run the smoke test (renders every view headlessly; also checks no date label is open-ended):
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v
 ```
 
 Developed and tested using Python 3.11.
