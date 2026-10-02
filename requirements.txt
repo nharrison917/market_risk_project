@@ -1,10 +1,8 @@
+# Runtime dependencies for the Streamlit dashboard (app.py) -- what Streamlit Cloud installs.
+# The app reads pre-computed CSVs from outputs/ and makes no network calls.
 # Pinned to exact versions smoke-tested on Python 3.11 (2026-10-02). See tests/test_app.py.
+# To re-run the data pipeline (main.py), install requirements-pipeline.txt instead.
 pandas==2.3.3
 numpy==1.26.4
 plotly==7.1.0
-yfinance==1.2.0
-pandas-datareader==0.10.0
-xlrd==2.0.2
 streamlit==1.64.0
-fredapi==0.5.2
-python-dotenv==1.2.4
